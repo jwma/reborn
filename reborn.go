@@ -21,32 +21,56 @@ func NewWithDefaults(rdb *redis.Client, name string, defaults *Config) (*Reborn,
 		rdb:    rdb,
 		name:   name,
 	}
-	for k, v := range defaults.kvPairs {
-		err := r.Config.SetValue(k, v)
-		if err != nil {
-			return nil, err
+
+	cfgFromDB, err := r.loadFromDB()
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.syncDefaultsToDB(cfgFromDB)
+	if err != nil {
+		return nil, err
+	}
+
+	r.overrideDefaultsWithDBConfig(cfgFromDB)
+
+	return r, nil
+}
+
+// 把只存在于当前 reborn 实例的配置信息同步到数据库
+func (r *Reborn) syncDefaultsToDB(cfgFromDB map[string]string) error {
+	c := NewConfig()
+	for k, v := range r.kvPairs {
+		if _, ok := cfgFromDB[k]; !ok {
+			c.kvPairs[k] = v
 		}
 	}
-	err = r.loadFromDB()
-	return r, err
-}
-
-// 将 c.Config 的配置项目保存到数据库，已存在的配置项会被覆盖
-func (r *Reborn) Save() error {
-	_, err := r.rdb.HMSet(r.name, r.kvPairs).Result()
-	return err
-}
-
-// 从数据库中加载配置项
-func (r *Reborn) loadFromDB() error {
-	rs, err := r.rdb.HGetAll(r.name).Result()
-	if err != nil {
-		return err
-	}
-	for k, v := range rs {
-		r.kvPairs[k] = v // 这里不用 SetValue 是减少不必要的判断
+	if len(c.kvPairs) > 0 {
+		_, err := r.rdb.HMSet(r.name, c.kvPairs).Result()
+		if err != nil {
+			return SyncDefaultsToDBError{err}
+		}
 	}
 	return nil
+}
+
+func (r *Reborn) loadFromDB() (map[string]string, error) {
+	rs, err := r.rdb.HGetAll(r.name).Result()
+	if err != nil {
+		return make(map[string]string), LoadFromDBError{err}
+	}
+	return rs, nil
+}
+
+func (r *Reborn) overrideDefaultsWithDBConfig(cfgFromDB map[string]string) {
+	for k, v := range cfgFromDB {
+		r.kvPairs[k] = v
+	}
+}
+
+func (r *Reborn) Persist() error {
+	_, err := r.rdb.HMSet(r.name, r.kvPairs).Result()
+	return err
 }
 
 func (r *Reborn) Set(key string, value interface{}) error {
@@ -54,6 +78,7 @@ func (r *Reborn) Set(key string, value interface{}) error {
 	if err != nil {
 		return err
 	}
+
 	_, err = r.rdb.HSet(r.name, key, r.kvPairs[key]).Result()
 	if err != nil {
 		return err
