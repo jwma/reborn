@@ -14,6 +14,10 @@
 
 ---
 
+[中文](README.zh_cn.md "中文") | [English](README.md "English")
+
+---
+
 ## 安装
 ```console
 go get github.com/jwma/reborn
@@ -95,5 +99,32 @@ r.SetValue("websiteTitle", "Promotion")
 
 // 通过调用 Persist 方法，对当前 Reborn 实例的配置进行保存到数据库的操作
 r.Persist()
-
 ```
+
+## 支持的数据类型
+
+你可以在使用 `Set()` 或 `SetValue()` 时，传递如下的数据类型：
+- `int`
+- `float64`
+- `string`
+- `bool`
+- `[]int`
+- `[]string`
+- `map[string]int`
+- `map[string]string`
+
+_⚠️ 当你 `Set()` 或 `SetValue()` 传递了不支持的数据类型时，你会得到一个 `UnsupportedValueTypeError`。_
+
+你可以通过如下的方法获取不同类型的配置项：
+- `GetValue()` 获取 `string`
+- `GetIntValue()` 获取 `int`
+- `GetFloat64Value()` 获取 `float64`
+- `GetBoolValue()` 获取  `bool`
+- `GetIntSliceValue()` 获取 `[]int`
+- `GetStringSliceValue()` 获取 `[]string`
+- `GetStringIntMapValue()` 获取 `map[string]int`
+- `GetStringStringMapValue()` 获取 `map[string]string`
+
+### 想要支持其他数据类型？
+如果你的配置项使用的数据类型不在支持列表中，你可以在 `Set()` 或 `SetValue()` 时，传入已经转换为 `string` 的值，在读取配置项时，
+可以使用 `GetValue()` 获取，最后再转换为原本的数据类型。

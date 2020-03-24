@@ -2,7 +2,7 @@
   <br>Reborn<br>
 </h1>
 
-<p align="center"><em>A redis-based configuration library developed using Go, easy to use.</em></p>
+<p align="center"><em>A redis-based configuration library developed using Go, ready to go, easy to use.</em></p>
 <p align="center">
   <a href="https://github.com/jwma/reborn/workflows/Go/badge.svg?branch=master" target="_blank">
     <img src="https://github.com/jwma/reborn/workflows/Go/badge.svg?branch=master" alt="ci">
@@ -11,6 +11,10 @@
       <img src="https://img.shields.io/github/license/mashape/apistatus.svg" alt="license">
   </a>
 </p>
+
+---
+
+[中文](README.zh_cn.md "中文") | [English](README.md "English")
 
 ---
 
@@ -98,5 +102,34 @@ r.SetValue("websiteTitle", "Promotion")
 
 // after SetValue(), you can call Persist() save you Key-Value into Redis.
 r.Persist()
-
 ```
+
+## Supported types
+
+Here are the types you can pass when you call `Set()` or `SetValue()`:
+- `int`
+- `float64`
+- `string`
+- `bool`
+- `[]int`
+- `[]string`
+- `map[string]int`
+- `map[string]string`
+
+_⚠️ You will get the `UnsupportedValueTypeError` when you pass unsupported types._
+
+Call the below functions to get different types value:
+- `GetValue()` return `string`
+- `GetIntValue()` return `int`
+- `GetFloat64Value()` return `float64`
+- `GetBoolValue()` return  `bool`
+- `GetIntSliceValue()` return `[]int`
+- `GetStringSliceValue()` return `[]string`
+- `GetStringIntMapValue()` return `map[string]int`
+- `GetStringStringMapValue()` return `map[string]string`
+
+### How to support the other types?
+You can parse the variable to `string`, then you can call `Set()` or `SetValue()`. When you want to get this config item,
+you can call `GetValue()` to get `string` types variable, then you parse it back.
+
+Not cool, but it works~
