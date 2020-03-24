@@ -16,6 +16,14 @@
 
 [中文](README.zh_cn.md "中文") | [English](README.md "English")
 
+* [安装](#安装)
+* [快速开始](#快速开始)
+* [更多用法](#更多用法)
+    * [获得没有任何配置项的 Reborn 实例](#获得没有任何配置项的-reborn-实例)
+    * [一次保存多个配置项](#一次保存多个配置项)
+* [支持的数据类型](#支持的数据类型)
+    * [想要支持其他数据类型？](#想要支持其他数据类型)
+
 ---
 
 ## 安装
@@ -88,7 +96,7 @@ r.Set("websiteTitle", "Reborn")
 r.Set("requestTimeout", 30)
 ```
 
-### 一次数据库请求设置多个配置
+### 一次保存多个配置项
 
 ```go
 r, _ := reborn.New(client, "YOUR_CONFIG_KEY")

@@ -16,6 +16,14 @@
 
 [中文](README.zh_cn.md "中文") | [English](README.md "English")
 
+* [Install](#install)
+* [Quick Start](#quick-start)
+* [More usage](#more-usage)
+    * [Create a Reborn instance without default configs](#create-a-reborn-instance-without-default-configs)
+    * [Save multiple Key-Value at one time](#save-multiple-key-value-at-one-time)
+* [Supported types](#supported-types)
+    * [How to support the other types?](#how-to-support-the-other-types)
+
 ---
 
 ## Install
