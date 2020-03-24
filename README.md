@@ -4,6 +4,9 @@
 
 <p align="center"><em>A redis-based configuration library developed using Go, easy to use.</em></p>
 <p align="center">
+  <a href="https://github.com/jwma/reborn/workflows/Go/badge.svg?branch=master" target="_blank">
+    <img src="https://github.com/jwma/reborn/workflows/Go/badge.svg?branch=master" alt="ci">
+  </a>
   <a href="https://img.shields.io/github/license/mashape/apistatus.svg" target="_blank">
       <img src="https://img.shields.io/github/license/mashape/apistatus.svg" alt="license">
   </a>
@@ -97,4 +100,3 @@ r.SetValue("websiteTitle", "Promotion")
 r.Persist()
 
 ```
-

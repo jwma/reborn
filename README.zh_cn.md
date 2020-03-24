@@ -4,6 +4,9 @@
 
 <p align="center"><em>Reborn 是使用 Go 开发的，基于 Redis 存储的配置库，简单配置，易于使用。</em></p>
 <p align="center">
+  <a href="https://github.com/jwma/reborn/workflows/Go/badge.svg?branch=master" target="_blank">
+    <img src="https://github.com/jwma/reborn/workflows/Go/badge.svg?branch=master" alt="ci">
+  </a>
   <a href="https://img.shields.io/github/license/mashape/apistatus.svg" target="_blank">
       <img src="https://img.shields.io/github/license/mashape/apistatus.svg" alt="license">
   </a>
@@ -94,4 +97,3 @@ r.SetValue("websiteTitle", "Promotion")
 r.Persist()
 
 ```
-
