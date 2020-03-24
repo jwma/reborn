@@ -3,6 +3,7 @@ package reborn
 import (
 	"github.com/go-redis/redis"
 	"os"
+	"reflect"
 	"strconv"
 	"testing"
 )
@@ -87,7 +88,7 @@ func TestSaveMultipleValue(t *testing.T) {
 		return
 	}
 
-	// 使用 SetValue 设置的值只会保存在当前实例中，还不会保存到数据库
+	// 使用 SetValue() 设置的值只会保存在当前实例中，还不会保存到数据库
 	err = reborn.SetValue("websiteTitle", "Reborn")
 	if err != nil {
 		t.Errorf("failed to set websiteTitle, error: %v\n", err)
@@ -98,7 +99,7 @@ func TestSaveMultipleValue(t *testing.T) {
 		t.Errorf("failed to set toggle, error: %v\n", err)
 	}
 
-	// Persist 会将数据保存到数据库
+	// Persist() 会将数据保存到数据库
 	err = reborn.Persist()
 	if err != nil {
 		t.Errorf("failed to persist config to DB, error: %v\n", err)
@@ -130,4 +131,52 @@ func TestDefaultsConfig(t *testing.T) {
 	}
 
 	t.Log(reborn)
+}
+
+func TestCompositeTypes(t *testing.T) {
+	// 准备工作，先清理可能存在的数据
+	configName := "config"
+	client.Del(configName)
+
+	reborn, err := New(getRedisClient(), configName)
+	if err != nil {
+		t.Errorf("failed to get Reborn instance, error: %v\n", err)
+		return
+	}
+
+	intSlice := []int{1, 2, 3, 4, 5}
+	err = reborn.Set("intSlice", intSlice)
+	if err != nil {
+		t.Errorf("failed to set []int value, error: %v\n", err)
+	}
+	if i := reborn.GetIntSliceValue("intSlice", make([]int, 0)); !reflect.DeepEqual(intSlice, i) {
+		t.Errorf("intSlice expected: %v, got: %v\n", intSlice, i)
+	}
+
+	stringSlice := []string{"anmuji.com", "Reborn"}
+	err = reborn.Set("stringSlice", stringSlice)
+	if err != nil {
+		t.Errorf("failed to set []string value, error: %v\n", err)
+	}
+	if j := reborn.GetStringSliceValue("stringSlice", make([]string, 0)); !reflect.DeepEqual(stringSlice, j) {
+		t.Errorf("stringSlice expected: %v, got: %v\n", stringSlice, j)
+	}
+
+	stringIntMap := map[string]int{"mj": 1, "anmuji": 2}
+	err = reborn.Set("stringIntMap", stringIntMap)
+	if err != nil {
+		t.Errorf("failed to set map[string]int value, error: %v\n", err)
+	}
+	if k := reborn.GetStringIntMapValue("stringIntMap", make(map[string]int)); !reflect.DeepEqual(stringIntMap, k) {
+		t.Errorf("stringIntMap expected: %v, got: %v\n", stringIntMap, k)
+	}
+
+	stringStringMap := map[string]string{"mj": "MJ.MA", "anmuji": "安木鸡"}
+	err = reborn.Set("stringStringMap", stringStringMap)
+	if err != nil {
+		t.Errorf("failed to set map[string]string value, error: %v\n", err)
+	}
+	if k := reborn.GetStringStringMapValue("stringStringMap", make(map[string]string)); !reflect.DeepEqual(stringStringMap, k) {
+		t.Errorf("stringStringMap expected: %v, got: %v\n", stringStringMap, k)
+	}
 }
