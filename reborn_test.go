@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strconv"
 	"testing"
+	"time"
 )
 
 var client *redis.Client
@@ -49,45 +50,6 @@ func TestBasics(t *testing.T) {
 		return
 	}
 
-	// 测试设置配置
-	err = reborn.Set("websiteTitle", "Reborn")
-	if err != nil {
-		t.Errorf("failed to set string value, error: %v\n", err)
-	}
-
-	err = reborn.Set("requestTimeout", 30)
-	if err != nil {
-		t.Errorf("failed to set int value, error: %v\n", err)
-	}
-
-	err = reborn.Set("discount", 5.5)
-	if err != nil {
-		t.Errorf("failed to set float64 value, error: %v\n", err)
-	}
-
-	err = reborn.Set("toggle", false)
-	if err != nil {
-		t.Errorf("failed to set bool value, error: %v\n", err)
-	}
-
-	// 测试获取配置
-	websiteTitle := reborn.GetValue("websiteTitle", "")
-	if websiteTitle != "Reborn" {
-		t.Errorf("websiteTitle expected: %s, got: %s\n", "Reborn", websiteTitle)
-	}
-}
-
-func TestSaveMultipleValue(t *testing.T) {
-	// 准备工作，先清理可能存在的数据
-	configName := "config"
-	client.Del(configName)
-
-	reborn, err := New(getRedisClient(), configName)
-	if err != nil {
-		t.Errorf("failed to get Reborn instance, error: %v\n", err)
-		return
-	}
-
 	// 使用 SetValue() 设置的值只会保存在当前实例中，还不会保存到数据库
 	err = reborn.SetValue("websiteTitle", "Reborn")
 	if err != nil {
@@ -99,7 +61,6 @@ func TestSaveMultipleValue(t *testing.T) {
 		t.Errorf("failed to set toggle, error: %v\n", err)
 	}
 
-	// Persist() 会将数据保存到数据库
 	err = reborn.Persist()
 	if err != nil {
 		t.Errorf("failed to persist config to DB, error: %v\n", err)
@@ -129,8 +90,10 @@ func TestDefaultsConfig(t *testing.T) {
 		t.Errorf("failed to get Reborn instance, error: %v\n", err)
 		return
 	}
-
-	t.Log(reborn)
+	err = reborn.Persist()
+	if err != nil {
+		t.Errorf("failed to persist config to DB, error: %v\n", err)
+	}
 }
 
 func TestCompositeTypes(t *testing.T) {
@@ -145,7 +108,7 @@ func TestCompositeTypes(t *testing.T) {
 	}
 
 	intSlice := []int{1, 2, 3, 4, 5}
-	err = reborn.Set("intSlice", intSlice)
+	err = reborn.SetValue("intSlice", intSlice)
 	if err != nil {
 		t.Errorf("failed to set []int value, error: %v\n", err)
 	}
@@ -154,7 +117,7 @@ func TestCompositeTypes(t *testing.T) {
 	}
 
 	stringSlice := []string{"anmuji.com", "Reborn"}
-	err = reborn.Set("stringSlice", stringSlice)
+	err = reborn.SetValue("stringSlice", stringSlice)
 	if err != nil {
 		t.Errorf("failed to set []string value, error: %v\n", err)
 	}
@@ -163,7 +126,7 @@ func TestCompositeTypes(t *testing.T) {
 	}
 
 	stringIntMap := map[string]int{"mj": 1, "anmuji": 2}
-	err = reborn.Set("stringIntMap", stringIntMap)
+	err = reborn.SetValue("stringIntMap", stringIntMap)
 	if err != nil {
 		t.Errorf("failed to set map[string]int value, error: %v\n", err)
 	}
@@ -172,11 +135,52 @@ func TestCompositeTypes(t *testing.T) {
 	}
 
 	stringStringMap := map[string]string{"mj": "MJ.MA", "anmuji": "安木鸡"}
-	err = reborn.Set("stringStringMap", stringStringMap)
+	err = reborn.SetValue("stringStringMap", stringStringMap)
 	if err != nil {
 		t.Errorf("failed to set map[string]string value, error: %v\n", err)
 	}
 	if k := reborn.GetStringStringMapValue("stringStringMap", make(map[string]string)); !reflect.DeepEqual(stringStringMap, k) {
 		t.Errorf("stringStringMap expected: %v, got: %v\n", stringStringMap, k)
 	}
+
+	err = reborn.Persist()
+	if err != nil {
+		t.Errorf("failed to persist config to DB, error: %v\n", err)
+	}
+}
+
+func TestAutoReload(t *testing.T) {
+	// 准备工作，先清理可能存在的数据
+	configName := "config"
+	client.Del(configName)
+
+	reborn, err := New(getRedisClient(), configName)
+	if err != nil {
+		t.Errorf("failed to get Reborn instance, error: %v\n", err)
+		return
+	}
+
+	key := "autoload"
+	expected := "ok"
+	reborn.SetAutoReloadDuration(time.Millisecond)
+	reborn.StartAutoReload()
+
+	reborn.SetValue("k1", "v1")
+	time.AfterFunc(time.Millisecond*2, func() {
+		reborn.Persist()
+	})
+
+	time.AfterFunc(time.Millisecond, func() {
+		client.HSet(configName, key, expected) // 模拟数据库配置被修改
+	})
+
+	time.AfterFunc(time.Millisecond*7, func() {
+		reborn.StopAuthReload()
+		v := reborn.GetValue(key, "")
+		if v != expected {
+			t.Errorf("v expected: %s, got: %s\n", expected, v)
+		}
+	})
+
+	time.Sleep(time.Millisecond * 8)
 }
