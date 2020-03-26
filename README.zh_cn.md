@@ -21,9 +21,10 @@
 * [更多用法](#更多用法)
     * [获得没有任何配置项的 Reborn 实例](#获得没有任何配置项的-reborn-实例)
     * [一次保存多个配置项](#一次保存多个配置项)
+    * [开启自动重载配置](#开启自动重载配置)
 * [支持的数据类型](#支持的数据类型)
     * [想要支持其他数据类型？](#想要支持其他数据类型)
-
+* [使用须知](#使用须知)
 ---
 
 ## 安装
@@ -89,11 +90,6 @@ func main() {
 
 ```go
 r, _ := reborn.New(client, "YOUR_CONFIG_KEY")
-
-// 可以在程序运行时，根据需要设置配置项，此操作会同时更新 Reborn 实例以及数据库的配置项
-// 每一次 Set 的调用，都会请求一次数据库
-r.Set("websiteTitle", "Reborn")
-r.Set("requestTimeout", 30)
 ```
 
 ### 一次保存多个配置项
@@ -109,9 +105,23 @@ r.SetValue("websiteTitle", "Promotion")
 r.Persist()
 ```
 
+### 开启自动重载配置
+
+开启自动重载后，Reborn 会定时使用数据库的配置去覆盖 Reborn 实例的配置项，但当 Reborn 实例的数据有变动的情况下，自动重载功能会
+跳过重载操作，进入下一轮等待，直到你调用 `Persist()` 之后，自动重载将会继续进行重载配置的工作。
+
+```go
+r, _ := reborn.New(client, "YOUR_CONFIG_KEY")
+r.SetAutoReloadDuration(time.Second * 10)  // 默认间隔: 5s
+r.StartAutoReload()
+
+// 停止自动重载配置
+r.StopAutoReload()
+```
+
 ## 支持的数据类型
 
-你可以在使用 `Set()` 或 `SetValue()` 时，传递如下的数据类型：
+你可以在使用 `SetValue()` 时，传递如下的数据类型：
 - `int`
 - `float64`
 - `string`
@@ -121,7 +131,7 @@ r.Persist()
 - `map[string]int`
 - `map[string]string`
 
-_⚠️ 当你 `Set()` 或 `SetValue()` 传递了不支持的数据类型时，你会得到一个 `UnsupportedValueTypeError`。_
+_⚠️ 当你 `SetValue()` 传递了不支持的数据类型时，你会得到一个 `UnsupportedValueTypeError`。_
 
 你可以通过如下的方法获取不同类型的配置项：
 - `GetValue()` 获取 `string`
@@ -134,5 +144,15 @@ _⚠️ 当你 `Set()` 或 `SetValue()` 传递了不支持的数据类型时，�
 - `GetStringStringMapValue()` 获取 `map[string]string`
 
 ### 想要支持其他数据类型？
-如果你的配置项使用的数据类型不在支持列表中，你可以在 `Set()` 或 `SetValue()` 时，传入已经转换为 `string` 的值，在读取配置项时，
+如果你的配置项使用的数据类型不在支持列表中，你可以在 `SetValue()` 时，传入已经转换为 `string` 的值，在读取配置项时，
 可以使用 `GetValue()` 获取，最后再转换为原本的数据类型。
+
+## 使用须知
+
+**⚠️ 记得调用 `Persist()`。**
+
+当你调用 `SetValue()` 设置了配置项后，不要忘记调用 `Persist()`，忘记调用的后果：
+
+1. 你的配置当然不会被保存到数据库；
+2. 如果你开启了自动重载配置的话，忘记调用 `Persist()` 会影响配置的重载，因为 Reborn 认为你有改动未保存，所以不会使用数据库配置对 
+Reborn 实例的配置进行覆盖。 

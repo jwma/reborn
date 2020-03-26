@@ -21,8 +21,10 @@
 * [More usage](#more-usage)
     * [Create a Reborn instance without default configs](#create-a-reborn-instance-without-default-configs)
     * [Save multiple Key-Value at one time](#save-multiple-key-value-at-one-time)
+    * [Start auto reload](#start-auto-reload)
 * [Supported types](#supported-types)
     * [How to support the other types?](#how-to-support-the-other-types)
+* [Notice](#notice)
 
 ---
 
@@ -92,11 +94,6 @@ You can use Reborn like below.
 
 ```go
 r, _ := reborn.New(client, "YOUR_CONFIG_KEY")
-
-// Set() can set the Key-Value in Reborn instance and Redis at the same time.
-// each time the Set() is called, the Redis is requested once.
-r.Set("websiteTitle", "Reborn")
-r.Set("requestTimeout", 30)
 ```
 
 ### Save multiple Key-Value at one time
@@ -112,9 +109,25 @@ r.SetValue("websiteTitle", "Promotion")
 r.Persist()
 ```
 
+### Start auto reload
+
+After start auto reload function, Reborn will periodically use the database configs to override the config 
+items of the Reborn instance. However, when the data of the Reborn instance changes, the auto reload function will 
+skip the override operation and enter the next round of waiting until you call `Persist ()`, 
+the auto reload will continue the work of reload config items.
+
+```go
+r, _ := reborn.New(client, "YOUR_CONFIG_KEY")
+r.SetAutoReloadDuration(time.Second * 10)  // default duration: 5s
+r.StartAutoReload()
+
+// stop auto reload
+r.StopAutoReload()
+```
+
 ## Supported types
 
-Here are the types you can pass when you call `Set()` or `SetValue()`:
+The types you can pass when you call `SetValue()`:
 - `int`
 - `float64`
 - `string`
@@ -137,7 +150,16 @@ Call the below functions to get different types value:
 - `GetStringStringMapValue()` return `map[string]string`
 
 ### How to support the other types?
-You can parse the variable to `string`, then you can call `Set()` or `SetValue()`. When you want to get this config item,
+You can parse the variable to `string`, then you can call `SetValue()`. When you want to get this config item,
 you can call `GetValue()` to get `string` types variable, then you parse it back.
 
 Not cool, but it works~
+
+## Notice
+
+**⚠️ DON'T FORGET CALL THE `Persist()`。**
+
+After `SetValue()`, don't forget call `Persist()`, if not:
+
+1. Config items will not save into Redis.
+2. Auto reload function will not override the config items. 
