@@ -2,12 +2,16 @@ package reborn
 
 import (
 	"github.com/go-redis/redis"
+	"time"
 )
 
 type Reborn struct {
 	*Config
-	rdb  *redis.Client
-	name string
+	rdb                *redis.Client
+	name               string
+	ready              bool
+	autoReloadTicker   *time.Ticker
+	autoReloadDuration time.Duration
 }
 
 func New(rdb *redis.Client, name string) (*Reborn, error) {
@@ -17,9 +21,10 @@ func New(rdb *redis.Client, name string) (*Reborn, error) {
 func NewWithDefaults(rdb *redis.Client, name string, defaults *Config) (*Reborn, error) {
 	var err error
 	r := &Reborn{
-		Config: defaults,
-		rdb:    rdb,
-		name:   name,
+		Config:             defaults,
+		rdb:                rdb,
+		name:               name,
+		autoReloadDuration: time.Second * 5,
 	}
 
 	cfgFromDB, err := r.loadFromDB()
@@ -33,6 +38,7 @@ func NewWithDefaults(rdb *redis.Client, name string, defaults *Config) (*Reborn,
 	}
 
 	r.overrideDefaultsWithDBConfig(cfgFromDB)
+	r.ready = true
 
 	return r, nil
 }
@@ -66,6 +72,9 @@ func (r *Reborn) overrideDefaultsWithDBConfig(cfgFromDB map[string]string) {
 	for k, v := range cfgFromDB {
 		r.set(k, v)
 	}
+	r.mux.Lock()
+	r.hasChange = false
+	r.mux.Unlock()
 }
 
 func (r *Reborn) Persist() error {
@@ -75,16 +84,33 @@ func (r *Reborn) Persist() error {
 		return true
 	})
 	_, err := pipeline.Exec()
+
+	r.mux.Lock()
+	r.hasChange = false
+	r.mux.Unlock()
+
 	return err
 }
 
-func (r *Reborn) Set(key string, value interface{}) error {
-	err := r.Config.SetValue(key, value)
-	if err != nil {
-		return err
-	}
+func (r *Reborn) SetAutoReloadDuration(d time.Duration) {
+	r.autoReloadDuration = d
+}
 
-	v, _ := r.kvPairs.Load(key)
-	_, err = r.rdb.HSet(r.name, key, v).Result()
-	return err
+func (r *Reborn) StartAutoReload() {
+	r.autoReloadTicker = time.NewTicker(r.autoReloadDuration)
+	go func() {
+		for {
+			select {
+			case <-r.autoReloadTicker.C:
+				if r.ready && !r.hasChange {
+					cfgFromDB, _ := r.loadFromDB()
+					r.overrideDefaultsWithDBConfig(cfgFromDB)
+				}
+			}
+		}
+	}()
+}
+
+func (r *Reborn) StopAuthReload() {
+	r.autoReloadTicker.Stop()
 }

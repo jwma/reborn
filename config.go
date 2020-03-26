@@ -8,7 +8,9 @@ import (
 )
 
 type Config struct {
-	kvPairs sync.Map
+	kvPairs   sync.Map
+	hasChange bool
+	mux       sync.Mutex
 }
 
 func NewConfig() *Config {
@@ -52,6 +54,9 @@ func (c *Config) valueToString(value interface{}) (string, error) {
 }
 
 func (c *Config) set(key string, value string) {
+	c.mux.Lock()
+	c.hasChange = true
+	c.mux.Unlock()
 	c.kvPairs.Store(key, value)
 }
 
