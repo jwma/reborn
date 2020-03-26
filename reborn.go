@@ -111,6 +111,6 @@ func (r *Reborn) StartAutoReload() {
 	}()
 }
 
-func (r *Reborn) StopAuthReload() {
+func (r *Reborn) StopAutoReload() {
 	r.autoReloadTicker.Stop()
 }

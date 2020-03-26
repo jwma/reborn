@@ -175,7 +175,7 @@ func TestAutoReload(t *testing.T) {
 	})
 
 	time.AfterFunc(time.Millisecond*7, func() {
-		reborn.StopAuthReload()
+		reborn.StopAutoReload()
 		v := reborn.GetValue(key, "")
 		if v != expected {
 			t.Errorf("v expected: %s, got: %s\n", expected, v)
