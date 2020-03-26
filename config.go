@@ -4,19 +4,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"sync"
 )
 
-type kvPairs map[string]interface{}
-
 type Config struct {
-	kvPairs
+	kvPairs sync.Map
 }
 
 func NewConfig() *Config {
-	return &Config{kvPairs{}}
+	return &Config{}
 }
 
-func (c Config) valueToString(value interface{}) (string, error) {
+func (c *Config) valueToString(value interface{}) (string, error) {
 	var v string
 	switch value.(type) {
 	case string:
@@ -52,23 +51,27 @@ func (c Config) valueToString(value interface{}) (string, error) {
 	return v, nil
 }
 
-func (c Config) SetValue(key string, value interface{}) error {
+func (c *Config) set(key string, value string) {
+	c.kvPairs.Store(key, value)
+}
+
+func (c *Config) SetValue(key string, value interface{}) error {
 	v, err := c.valueToString(value)
 	if err != nil {
 		return err
 	}
-	c.kvPairs[key] = v
+	c.set(key, v)
 	return nil
 }
 
-func (c Config) GetValue(key string, defaults string) string {
-	if value, ok := c.kvPairs[key]; ok {
+func (c *Config) GetValue(key string, defaults string) string {
+	if value, ok := c.kvPairs.Load(key); ok {
 		return value.(string)
 	}
 	return defaults
 }
 
-func (c Config) GetIntValue(key string, defaults int) int {
+func (c *Config) GetIntValue(key string, defaults int) int {
 	vStr := c.GetValue(key, "")
 	if vStr == "" {
 		return defaults
@@ -80,7 +83,7 @@ func (c Config) GetIntValue(key string, defaults int) int {
 	return v
 }
 
-func (c Config) GetFloat64Value(key string, defaults float64) float64 {
+func (c *Config) GetFloat64Value(key string, defaults float64) float64 {
 	vStr := c.GetValue(key, "")
 	if vStr == "" {
 		return defaults
@@ -92,7 +95,7 @@ func (c Config) GetFloat64Value(key string, defaults float64) float64 {
 	return v
 }
 
-func (c Config) GetBoolValue(key string, defaults bool) bool {
+func (c *Config) GetBoolValue(key string, defaults bool) bool {
 	vStr := c.GetValue(key, "")
 	if vStr == "" {
 		return defaults
@@ -104,7 +107,7 @@ func (c Config) GetBoolValue(key string, defaults bool) bool {
 	return v
 }
 
-func (c Config) GetIntSliceValue(key string, defaults []int) []int {
+func (c *Config) GetIntSliceValue(key string, defaults []int) []int {
 	vStr := c.GetValue(key, "")
 	if vStr == "" {
 		return defaults
@@ -117,7 +120,7 @@ func (c Config) GetIntSliceValue(key string, defaults []int) []int {
 	return r
 }
 
-func (c Config) GetStringSliceValue(key string, defaults []string) []string {
+func (c *Config) GetStringSliceValue(key string, defaults []string) []string {
 	vStr := c.GetValue(key, "")
 	if vStr == "" {
 		return defaults
@@ -130,7 +133,7 @@ func (c Config) GetStringSliceValue(key string, defaults []string) []string {
 	return r
 }
 
-func (c Config) GetStringIntMapValue(key string, defaults map[string]int) map[string]int {
+func (c *Config) GetStringIntMapValue(key string, defaults map[string]int) map[string]int {
 	vStr := c.GetValue(key, "")
 	if vStr == "" {
 		return defaults
@@ -143,7 +146,7 @@ func (c Config) GetStringIntMapValue(key string, defaults map[string]int) map[st
 	return r
 }
 
-func (c Config) GetStringStringMapValue(key string, defaults map[string]string) map[string]string {
+func (c *Config) GetStringStringMapValue(key string, defaults map[string]string) map[string]string {
 	vStr := c.GetValue(key, "")
 	if vStr == "" {
 		return defaults

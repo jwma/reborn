@@ -39,17 +39,17 @@ func NewWithDefaults(rdb *redis.Client, name string, defaults *Config) (*Reborn,
 
 // 把只存在于当前 reborn 实例的配置信息同步到数据库
 func (r *Reborn) syncDefaultsToDB(cfgFromDB map[string]string) error {
-	c := NewConfig()
-	for k, v := range r.kvPairs {
-		if _, ok := cfgFromDB[k]; !ok {
-			c.kvPairs[k] = v
+	pipeline := r.rdb.Pipeline()
+	r.kvPairs.Range(func(k, v interface{}) bool {
+		kk := k.(string)
+		if _, ok := cfgFromDB[kk]; !ok {
+			pipeline.HSet(r.name, kk, v)
 		}
-	}
-	if len(c.kvPairs) > 0 {
-		_, err := r.rdb.HMSet(r.name, c.kvPairs).Result()
-		if err != nil {
-			return SyncDefaultsToDBError{err}
-		}
+		return true
+	})
+	_, err := pipeline.Exec()
+	if err != nil {
+		return SyncDefaultsToDBError{err}
 	}
 	return nil
 }
@@ -64,12 +64,17 @@ func (r *Reborn) loadFromDB() (map[string]string, error) {
 
 func (r *Reborn) overrideDefaultsWithDBConfig(cfgFromDB map[string]string) {
 	for k, v := range cfgFromDB {
-		r.kvPairs[k] = v
+		r.set(k, v)
 	}
 }
 
 func (r *Reborn) Persist() error {
-	_, err := r.rdb.HMSet(r.name, r.kvPairs).Result()
+	pipeline := r.rdb.Pipeline()
+	r.kvPairs.Range(func(k, v interface{}) bool {
+		pipeline.HSet(r.name, k.(string), v)
+		return true
+	})
+	_, err := pipeline.Exec()
 	return err
 }
 
@@ -79,9 +84,7 @@ func (r *Reborn) Set(key string, value interface{}) error {
 		return err
 	}
 
-	_, err = r.rdb.HSet(r.name, key, r.kvPairs[key]).Result()
-	if err != nil {
-		return err
-	}
-	return nil
+	v, _ := r.kvPairs.Load(key)
+	_, err = r.rdb.HSet(r.name, key, v).Result()
+	return err
 }
