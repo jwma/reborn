@@ -72,7 +72,7 @@ func main() {
 	// 通过默认配置获得一个 Reborn 实例，该实例的配置会保存在 Redis 名为 YOUR_CONFIG_KEY 的 Hash 中
 	r, err := reborn.NewWithDefaults(client, "YOUR_CONFIG_KEY", defaults)
 
-	// 通过key 获取配置，第二个参数为获取的 key 不存的时候所使用的默认值
+	// 通过 key 获取配置，第二个参数为获取的 key 不存的时候所使用的默认值
 	websiteTitle := r.GetValue("websiteTitle", "默认值")
 	fmt.Println(websiteTitle)  // 输出：Reborn
 	fmt.Println(r.GetValue("noExistsKey", "oops")) // 输出：oops
@@ -107,8 +107,7 @@ r.Persist()
 
 ### 开启自动重载配置
 
-开启自动重载后，Reborn 会定时使用数据库的配置去覆盖 Reborn 实例的配置项，但当 Reborn 实例的数据有变动的情况下，自动重载功能会
-跳过重载操作，进入下一轮等待，直到你调用 `Persist()` 之后，自动重载将会继续进行重载配置的工作。
+开启自动重载后，Reborn 会定时使用数据库的配置去覆盖 Reborn 实例的配置项，但当 Reborn 实例的数据有变动的情况下，自动重载功能会跳过重载操作，进入下一轮等待，直到你调用 `Persist()` 之后，自动重载将会继续进行重载配置的工作。
 
 ```go
 r, _ := reborn.New(client, "YOUR_CONFIG_KEY")
@@ -149,7 +148,7 @@ _⚠️ 当你 `SetValue()` 传递了不支持的数据类型时，你会得到�
 
 ## 使用须知
 
-**⚠️ 记得调用 `Persist()`。**
+**⚠️️ 记得调用 `Persist()`。**
 
 当你调用 `SetValue()` 设置了配置项后，不要忘记调用 `Persist()`，忘记调用的后果：
 
