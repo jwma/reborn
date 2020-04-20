@@ -88,6 +88,58 @@ func (c *Config) GetIntValue(key string, defaults int) int {
 	return v
 }
 
+// if key does not exists, return v
+// if key exists and the value < v, return value
+// if key exists and the value >= v, return v
+func (c *Config) GetIntValueLT(key string, v int) int {
+	value := c.GetIntValue(key, v)
+
+	if value < v {
+		return value
+	}
+
+	return v
+}
+
+// if key does not exists, return v
+// if key exists and the value <= v, return value
+// if key exists and the value > v, return v
+func (c *Config) GetIntValueLTE(key string, v int) int {
+	value := c.GetIntValue(key, v)
+
+	if value <= v {
+		return value
+	}
+
+	return v
+}
+
+// if key does not exists, return v
+// if key exists and the value > v, return value
+// if key exists and the value <= v, return v
+func (c *Config) GetIntValueGT(key string, v int) int {
+	value := c.GetIntValue(key, v)
+
+	if value > v {
+		return value
+	}
+
+	return v
+}
+
+// if key does not exists, return v
+// if key exists and the value >= v, return value
+// if key exists and the value < v, return v
+func (c *Config) GetIntValueGTE(key string, v int) int {
+	value := c.GetIntValue(key, v)
+
+	if value >= v {
+		return value
+	}
+
+	return v
+}
+
 func (c *Config) GetFloat64Value(key string, defaults float64) float64 {
 	vStr := c.GetValue(key, "")
 	if vStr == "" {
