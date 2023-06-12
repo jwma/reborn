@@ -157,9 +157,9 @@ Not cool, but it works~
 
 ## Notice
 
-**⚠️ DON'T FORGET CALL THE `Persist()`。**
+**⚠️ DON'T FORGET CALL THE `Persist()`**
 
 After `SetValue()`, don't forget call `Persist()`, if not:
 
 1. Config items will not save into Redis.
-2. Auto reload function will not override the config items. 
+2. Auto reload function will not update the config items. 
